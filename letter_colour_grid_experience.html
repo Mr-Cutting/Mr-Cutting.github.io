@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>8x8 Letter Colour Grid</title>
+  <style>
+    :root {
+      --bg: #f4f4f6;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #d1d5db;
+      --shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #ffffff, var(--bg));
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: min(1100px, 100%);
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.8rem, 3vw, 3rem);
+    }
+
+    p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .main-area {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(8, 44px);
+      grid-template-rows: repeat(8, 44px);
+      gap: 6px;
+      padding: 10px;
+      background: #eef0f4;
+      border-radius: 18px;
+      width: max-content;
+    }
+
+    .cell {
+      width: 44px;
+      height: 44px;
+      text-align: center;
+      text-transform: uppercase;
+      font-size: 1.3rem;
+      font-weight: 700;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      color: #111827;
+      outline: none;
+      transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .cell:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+      transform: scale(1.05);
+    }
+
+    .tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 11px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #111827;
+      color: #fff;
+      transition: transform 0.12s ease, opacity 0.12s ease;
+    }
+
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+      opacity: 0.85;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(130px, 1fr));
+      gap: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      background: #fafafa;
+      font-weight: 700;
+    }
+
+    .swatch {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      flex: 0 0 auto;
+    }
+
+    .preview-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+
+    canvas {
+      width: min(420px, 100%);
+      image-rendering: pixelated;
+      border-radius: 18px;
+      border: 10px solid #111827;
+      background: #fff;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .message {
+      min-height: 24px;
+      font-weight: 700;
+      color: #b45309;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .app, .main-area {
+        grid-template-columns: 1fr;
+      }
+
+      .grid {
+        grid-template-columns: repeat(8, minmax(32px, 1fr));
+        grid-template-rows: repeat(8, 40px);
+        width: 100%;
+      }
+
+      .cell {
+        width: 100%;
+        height: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="card">
+      <h1>Letter Colour Grid</h1>
+      <p>Enter letters from A to L into the 8×8 grid. Each letter becomes one colour in the image preview.</p>
+
+      <div class="main-area">
+        <div>
+          <div id="grid" class="grid" aria-label="8 by 8 letter grid"></div>
+          <div class="tools">
+            <button id="randomButton">Random image</button>
+            <button id="clearButton" class="secondary">Clear grid</button>
+            <button id="downloadButton" class="secondary">Download PNG</button>
+          </div>
+        </div>
+
+        <aside>
+          <p><strong>Colour key</strong></p>
+          <div id="legend" class="legend"></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="card preview-wrap">
+      <h2>Your image</h2>
+      <canvas id="preview" width="800" height="800" aria-label="Generated image preview"></canvas>
+      <div id="message" class="message"></div>
+    </section>
+  </main>
+
+  <script>
+    const colourMap = {
+      A: '#000000',
+      B: '#ffffff',
+      C: '#ef4444',
+      D: '#f97316',
+      E: '#facc15',
+      F: '#22c55e',
+      G: '#14b8a6',
+      H: '#3b82f6',
+      I: '#6366f1',
+      J: '#a855f7',
+      K: '#ec4899',
+      L: '#92400e'
+    };
+
+    const starterImage = [
+      'BBBBBBBB',
+      'BBHHHHBB',
+      'BHHEEHHB',
+      'BHECCEHB',
+      'BHECCEHB',
+      'BHHEEHHB',
+      'BBHHHHBB',
+      'BBBBBBBB'
+    ];
+
+    const grid = document.getElementById('grid');
+    const legend = document.getElementById('legend');
+    const canvas = document.getElementById('preview');
+    const ctx = canvas.getContext('2d');
+    const message = document.getElementById('message');
+    const cells = [];
+
+    function buildLegend() {
+      Object.entries(colourMap).forEach(([letter, colour]) => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+
+        const swatch = document.createElement('span');
+        swatch.className = 'swatch';
+        swatch.style.background = colour;
+
+        const label = document.createElement('span');
+        label.textContent = `${letter}`;
+
+        item.append(swatch, label);
+        legend.appendChild(item);
+      });
+    }
+
+    function buildGrid() {
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const input = document.createElement('input');
+          input.className = 'cell';
+          input.maxLength = 1;
+          input.inputMode = 'text';
+          input.autocomplete = 'off';
+          input.ariaLabel = `Row ${row + 1}, column ${col + 1}`;
+          input.value = starterImage[row][col];
+
+          input.addEventListener('input', () => handleInput(input, row, col));
+          input.addEventListener('keydown', (event) => handleNavigation(event, row, col));
+
+          grid.appendChild(input);
+          cells.push(input);
+        }
+      }
+    }
+
+    function handleInput(input, row, col) {
+      const value = input.value.toUpperCase();
+      input.value = value;
+
+      if (value && !colourMap[value]) {
+        message.textContent = 'Use letters A to L only.';
+        input.value = '';
+        return;
+      }
+
+      message.textContent = '';
+      drawPreview();
+
+      if (value) {
+        const next = cells[row * 8 + col + 1];
+        if (next) next.focus();
+      }
+    }
+
+    function handleNavigation(event, row, col) {
+      let nextRow = row;
+      let nextCol = col;
+
+      if (event.key === 'ArrowUp') nextRow--;
+      else if (event.key === 'ArrowDown') nextRow++;
+      else if (event.key === 'ArrowLeft') nextCol--;
+      else if (event.key === 'ArrowRight') nextCol++;
+      else return;
+
+      event.preventDefault();
+      if (nextRow >= 0 && nextRow < 8 && nextCol >= 0 && nextCol < 8) {
+        cells[nextRow * 8 + nextCol].focus();
+      }
+    }
+
+    function drawPreview() {
+      const pixelSize = canvas.width / 8;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      cells.forEach((cell, index) => {
+        const row = Math.floor(index / 8);
+        const col = index % 8;
+        const letter = cell.value.toUpperCase();
+        ctx.fillStyle = colourMap[letter] || '#e5e7eb';
+        ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+      });
+    }
+
+    function randomImage() {
+      const letters = Object.keys(colourMap);
+      cells.forEach(cell => {
+        cell.value = letters[Math.floor(Math.random() * letters.length)];
+      });
+      message.textContent = '';
+      drawPreview();
+    }
+
+    function clearGrid() {
+      cells.forEach(cell => cell.value = '');
+      message.textContent = '';
+      drawPreview();
+      cells[0].focus();
+    }
+
+    function downloadImage() {
+      const link = document.createElement('a');
+      link.download = 'letter-colour-grid.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    document.getElementById('randomButton').addEventListener('click', randomImage);
+    document.getElementById('clearButton').addEventListener('click', clearGrid);
+    document.getElementById('downloadButton').addEventListener('click', downloadImage);
+
+    buildLegend();
+    buildGrid();
+    drawPreview();
+  </script>
+</body>
+</html>
